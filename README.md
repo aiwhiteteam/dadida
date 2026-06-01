@@ -1,6 +1,6 @@
 # Dadida
 
-Build autonomous AI personas for Discord communities.
+Build AI personas for Discord community engagement & management.
 
 ## Vision
 

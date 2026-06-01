@@ -1,7 +1,7 @@
 {
   "name": "dadida",
   "version": "0.1.0",
-  "description": "Build autonomous AI personas for Discord communities",
+  "description": "Build AI personas for Discord community engagement & management",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
