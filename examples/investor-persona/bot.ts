@@ -1,6 +1,7 @@
 import { createBot, discord } from 'dadida'
 import { investingClassifier } from './plugins/investing-classifier.js'
 import { investorReply } from './plugins/investor-reply.js'
+import { moderator } from './plugins/moderator.js'
 
 const bot = createBot({
   platform: discord({
@@ -9,7 +10,9 @@ const bot = createBot({
       ? [process.env.GENERAL_CHANNEL_ID]
       : undefined,
   }),
+  storage: { dbPath: './data/messages.db' },
   plugins: [
+    moderator(),
     investingClassifier(),
     investorReply(),
   ],

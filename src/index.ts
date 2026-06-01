@@ -2,6 +2,8 @@ export { createBot } from './core/bot.js'
 export { definePlugin } from './core/plugin.js'
 export { discord } from './platforms/discord.js'
 export { loadPersona, loadKnowledge } from './persona/loader.js'
+export { MessageStore } from './storage/sqlite.js'
+export { createHistoryTool } from './storage/history-tool.js'
 
 export type {
   DadidaBot,
@@ -17,6 +19,7 @@ export type {
   Platform,
   PlatformConfig,
   Logger,
+  StoredMessage,
 } from './core/types.js'
 
 export type {

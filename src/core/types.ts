@@ -21,6 +21,24 @@ export interface DadidaContext {
   platform: Platform
   logger: Logger
   classifications: Classification
+  store: MessageStore | null
+  recentMessages: StoredMessage[]
+}
+
+export interface MessageStore {
+  store(message: DadidaMessage): void
+  search(options: { query?: string; authorId?: string; channelId?: string; before?: number; after?: number; limit?: number }): StoredMessage[]
+  getRecent(channelId: string, limit?: number): StoredMessage[]
+  close(): void
+}
+
+export interface StoredMessage {
+  id: string
+  content: string
+  authorId: string
+  channelId: string
+  platform: string
+  timestamp: number
 }
 
 export interface Platform {
@@ -29,6 +47,8 @@ export interface Platform {
   disconnect(): Promise<void>
   onMessage(handler: (message: DadidaMessage) => Promise<void>): void
   reply(channelId: string, messageId: string, text: string): Promise<void>
+  mute(channelId: string, userId: string, durationSeconds: number, reason?: string): Promise<void>
+  sendMessage(channelId: string, text: string): Promise<void>
 }
 
 export interface PlatformConfig {
@@ -46,6 +66,7 @@ export interface DadidaConfig {
   platform: PlatformConfig
   plugins: DadidaPlugin[]
   logger?: Logger
+  storage?: { dbPath?: string }
 }
 
 export interface DadidaPlugin {

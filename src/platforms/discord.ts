@@ -47,6 +47,21 @@ class DiscordPlatform implements Platform {
     await msg.reply(text)
   }
 
+  async mute(channelId: string, userId: string, durationSeconds: number, reason?: string): Promise<void> {
+    const channel = await this.client.channels.fetch(channelId)
+    if (!channel || !('guild' in channel)) return
+    const member = await channel.guild.members.fetch(userId)
+    await member.timeout(durationSeconds * 1000, reason)
+  }
+
+
+
+  async sendMessage(channelId: string, text: string): Promise<void> {
+    const channel = await this.client.channels.fetch(channelId)
+    if (!channel?.isTextBased() || !('send' in channel)) return
+    await channel.send(text)
+  }
+
   private async handleMessage(msg: DiscordMessage): Promise<void> {
     if (msg.author.bot) return
     if (this.config.channels?.length && !this.config.channels.includes(msg.channelId)) return

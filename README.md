@@ -221,33 +221,6 @@ fly deploy
 
 Set machine count to 1 — you only need one instance for the Discord gateway connection.
 
-### Google Cloud Run
-
-Cloud Run is designed for HTTP request/response workloads. For a long-running WebSocket bot, use **Cloud Run with `--no-cpu-throttling`** or prefer **Compute Engine** / **Cloud Run Jobs**:
-
-```bash
-# Build and push
-gcloud builds submit --tag gcr.io/PROJECT_ID/dadida-bot
-
-# Deploy as always-on service
-gcloud run deploy dadida-bot \
-  --image gcr.io/PROJECT_ID/dadida-bot \
-  --no-cpu-throttling \
-  --min-instances 1 \
-  --max-instances 1 \
-  --set-env-vars "DISCORD_TOKEN=xxx,OPENAI_API_KEY=xxx,CHANNEL_ID=xxx"
-```
-
-**Note:** `--min-instances 1` and `--no-cpu-throttling` are required to keep the WebSocket connection alive. This makes Cloud Run behave like a VM rather than a serverless function.
-
-Alternatively, use **Compute Engine** with a container:
-
-```bash
-gcloud compute instances create-with-container dadida-bot \
-  --container-image gcr.io/PROJECT_ID/dadida-bot \
-  --container-env "DISCORD_TOKEN=xxx,OPENAI_API_KEY=xxx,CHANNEL_ID=xxx"
-```
-
 ### Any VPS / Docker Host
 
 ```bash
@@ -274,6 +247,24 @@ docker run -d --restart unless-stopped \
 - **Fail-closed** — prefer false negatives over false positives
 - **Plugins are functions** — no magic, no YAML, no auto-discovery
 - **Platform-agnostic** — Discord first, extensible to Slack/Telegram
+
+## Roadmap
+
+- [ ] **Recent context** — fetch last N messages from channel, pass to agent as conversation context
+- [ ] **Message history** — store all messages to SQLite, expose `search_history` tool to agent for on-demand retrieval
+- [ ] **Memory system** — inspired by OpenClaw's three-layer architecture:
+
+  | Layer | Storage | Purpose |
+  |-------|---------|---------|
+  | Session context | Recent N messages from channel | Immediate conversational awareness |
+  | Message history | SQLite (all messages, auto-stored) | Agent searches on demand via tool |
+  | Long-term memory | `MEMORY.md` | Curated durable facts |
+
+- [ ] **Multi-agent** — multiple personas coexisting in one community (founder, moderator, support)
+- [ ] **Channel awareness** — personas behave differently per channel
+- [ ] **Human approval queue** — draft replies sent to admin channel before posting
+- [ ] **Slack / Telegram connectors**
+- [ ] **RAG tool** — `@openai/agents` tool for large knowledge base retrieval
 
 ## License
 
