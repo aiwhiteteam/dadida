@@ -4,7 +4,7 @@ Build AI personas for Discord community engagement & management.
 
 Two ways to use:
 
-- **🚀 Service** — clone, configure your persona, `docker run`. Self-host on Railway, Fly.io, or any VPS.
+- **🚀 Service** — clone, configure your persona, deploy. Self-host on Railway, Fly.io, or any VPS.
 - **📦 Library** — `npm install dadida` and build your own bot with a decoupled, customizable plugin system.
 
 ## Vision
