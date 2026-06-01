@@ -1,0 +1,52 @@
+{
+  "name": "dadida",
+  "version": "0.1.0",
+  "description": "Open-source framework for building autonomous AI personas in online communities",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./discord": {
+      "types": "./dist/platforms/discord.d.ts",
+      "import": "./dist/platforms/discord.js"
+    }
+  },
+  "bin": {
+    "dadida": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/cli.js start"
+  },
+  "keywords": [
+    "discord",
+    "ai",
+    "bot",
+    "agents",
+    "community",
+    "framework"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@openai/agents": "^0.11.0",
+    "discord.js": "^14.16.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
