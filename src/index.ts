@@ -25,4 +25,3 @@ export type {
 export type {
   DiscordConfig,
 } from './platforms/discord.js'
-
