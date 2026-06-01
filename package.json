@@ -1,7 +1,7 @@
 {
   "name": "dadida",
   "version": "0.1.0",
-  "description": "Open-source framework for building autonomous AI personas in online communities",
+  "description": "Build autonomous AI personas for Discord communities",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

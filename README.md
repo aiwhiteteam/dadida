@@ -1,6 +1,6 @@
 # Dadida
 
-Open-source framework for building autonomous AI personas in online communities.
+Build autonomous AI personas for Discord communities.
 
 ## Vision
 
