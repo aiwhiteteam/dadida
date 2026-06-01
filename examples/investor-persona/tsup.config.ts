@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['bot.ts'],
+  entry: ['index.ts'],
   format: ['esm'],
   target: 'node20',
   clean: true,

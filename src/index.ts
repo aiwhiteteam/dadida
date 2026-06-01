@@ -2,7 +2,7 @@ export { createBot } from './core/bot.js'
 export { definePlugin } from './core/plugin.js'
 export { discord } from './platforms/discord.js'
 export { loadPersona, loadKnowledge } from './persona/loader.js'
-export { MessageStore } from './storage/sqlite.js'
+export { MessageStore as SqliteMessageStore } from './storage/sqlite.js'
 export { createHistoryTool } from './storage/history-tool.js'
 
 export type {
@@ -20,6 +20,7 @@ export type {
   PlatformConfig,
   Logger,
   StoredMessage,
+  MessageStore,
 } from './core/types.js'
 
 export type {

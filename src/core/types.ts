@@ -20,9 +20,10 @@ export interface PolicyDecision {
 export interface DadidaContext {
   platform: Platform
   logger: Logger
-  classifications: Classification
-  store: MessageStore | null
+  classifications: Record<string, Classification>
   recentMessages: StoredMessage[]
+  get<T = unknown>(key: string): T | undefined
+  set<T = unknown>(key: string, value: T): void
 }
 
 export interface MessageStore {
@@ -66,14 +67,14 @@ export interface DadidaConfig {
   platform: PlatformConfig
   plugins: DadidaPlugin[]
   logger?: Logger
-  storage?: { dbPath?: string }
+  store?: MessageStore
 }
 
 export interface DadidaPlugin {
   name: string
   filter?: (message: DadidaMessage, ctx: DadidaContext) => Promise<boolean | void>
   classify?: (message: DadidaMessage, ctx: DadidaContext) => Promise<Classification | void>
-  policy?: (classification: Classification, message: DadidaMessage, ctx: DadidaContext) => Promise<PolicyDecision | void>
+  policy?: (classifications: Record<string, Classification>, message: DadidaMessage, ctx: DadidaContext) => Promise<PolicyDecision | void>
   action?: (decision: PolicyDecision, message: DadidaMessage, ctx: DadidaContext) => Promise<void>
   onReady?: (ctx: DadidaContext) => Promise<void>
   onError?: (error: Error, ctx: DadidaContext) => Promise<void>

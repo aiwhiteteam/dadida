@@ -1,4 +1,4 @@
-import type { DadidaConfig, DadidaContext, Logger, Platform, MessageStore } from './types.js'
+import type { DadidaConfig, DadidaContext, Logger, Platform, MessageStore, StoredMessage, Classification } from './types.js'
 import { runPipeline } from './pipeline.js'
 
 const defaultLogger: Logger = {
@@ -13,38 +13,40 @@ export interface DadidaBot {
   stop(): Promise<void>
 }
 
+function createContext(platform: Platform, logger: Logger, store: MessageStore | undefined): DadidaContext {
+  const bag = new Map<string, unknown>()
+  if (store) bag.set('store', store)
+
+  return {
+    platform,
+    logger,
+    classifications: {},
+    recentMessages: [],
+    get<T = unknown>(key: string): T | undefined {
+      return bag.get(key) as T | undefined
+    },
+    set<T = unknown>(key: string, value: T): void {
+      bag.set(key, value)
+    },
+  }
+}
+
 export function createBot(config: DadidaConfig): DadidaBot {
   const logger = config.logger ?? defaultLogger
   let platform: Platform
-  let store: MessageStore | null = null
 
   return {
     async start() {
-      if (config.storage) {
-        const { MessageStore: SqliteStore } = await import('../storage/sqlite.js')
-        store = new SqliteStore(config.storage.dbPath)
-        logger.info('Message store initialized')
-      }
-
       platform = config.platform.create()
-      const ctx: DadidaContext = {
-        platform,
-        logger,
-        classifications: {},
-        store,
-        recentMessages: [],
-      }
+      const baseCtx = createContext(platform, logger, config.store)
 
       platform.onMessage(async (message) => {
-        store?.store(message)
+        config.store?.store(message)
+        const recentMessages = config.store?.getRecent(message.channelId, 20) ?? []
 
-        const recentMessages = store?.getRecent(message.channelId, 20) ?? []
+        const messageCtx = createContext(platform, logger, config.store)
+        messageCtx.recentMessages = recentMessages
 
-        const messageCtx: DadidaContext = {
-          ...ctx,
-          classifications: {},
-          recentMessages,
-        }
         try {
           await runPipeline(message, config.plugins, messageCtx)
         } catch (error) {
@@ -62,7 +64,7 @@ export function createBot(config: DadidaConfig): DadidaBot {
 
       for (const plugin of config.plugins) {
         if (plugin.onReady) {
-          await plugin.onReady(ctx)
+          await plugin.onReady(baseCtx)
         }
       }
 
@@ -71,7 +73,7 @@ export function createBot(config: DadidaConfig): DadidaBot {
 
     async stop() {
       logger.info('Shutting down...')
-      store?.close()
+      config.store?.close()
       await platform?.disconnect()
       logger.info('Disconnected')
     },

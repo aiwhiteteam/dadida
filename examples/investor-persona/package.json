@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch bot.ts",
+    "dev": "tsx watch index.ts",
     "build": "tsup",
-    "start": "node dist/bot.js"
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "dadida": "file:../../",

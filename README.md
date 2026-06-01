@@ -4,7 +4,7 @@ Build AI personas for Discord community engagement & management.
 
 Two ways to use:
 
-- **🚀 Service** — clone, configure your persona, deploy. Self-host on Railway, Fly.io, or any VPS.
+- **🚀 Deploy** — use [dadida-starter](https://github.com/aiwhiteteam/dadida-starter) — clone, configure your persona, deploy to Railway / Fly.io / any VPS.
 - **📦 Library** — `npm install dadida` and build your own bot with a decoupled, customizable plugin system.
 
 ## Vision
@@ -47,7 +47,7 @@ npm install dadida @openai/agents zod
 ### Create a bot
 
 ```ts
-// bot.ts
+// index.ts
 import { createBot, discord, definePlugin } from 'dadida'
 import { Agent, run } from '@openai/agents'
 import { z } from 'zod'
@@ -104,7 +104,11 @@ export DISCORD_TOKEN=your-token
 export OPENAI_API_KEY=your-key
 export CHANNEL_ID=your-channel-id
 
-npx tsx bot.ts
+# Development
+npm run dev
+
+# Production
+npm run build && npm start
 ```
 
 ## Plugin System
@@ -176,17 +180,28 @@ Edit markdown to change personality or knowledge — no code changes needed.
 
 ## Self-Hosting
 
+> For deployment, use [dadida-starter](https://github.com/aiwhiteteam/dadida-starter). The instructions below apply to the starter repo.
+
 Dadida runs as a long-lived worker process (Discord WebSocket connection). No HTTP server required.
 
 ### Docker
 
 ```dockerfile
-FROM node:20-slim
+FROM node:20-slim AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --production
+RUN npm ci
 COPY . .
-CMD ["npx", "tsx", "bot.ts"]
+RUN npm run build
+
+FROM node:20-slim
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/personas ./personas
+COPY --from=build /app/knowledge ./knowledge
+COPY package.json ./
+CMD ["npm", "start"]
 ```
 
 ### Railway
@@ -199,7 +214,8 @@ CMD ["npx", "tsx", "bot.ts"]
    OPENAI_API_KEY=
    CHANNEL_ID=
    ```
-4. Set start command: `npx tsx bot.ts`
+4. Set build command: `npm run build`
+5. Set start command: `npm start`
 5. Deploy — Railway runs it as a worker process
 
 No health check endpoint needed. Railway monitors process health directly.

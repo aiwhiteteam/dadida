@@ -11,7 +11,6 @@ export async function runPipeline(
   plugins: DadidaPlugin[],
   ctx: DadidaContext,
 ): Promise<void> {
-  // Filter phase — if any filter returns false, stop processing
   for (const plugin of plugins) {
     if (!plugin.filter) continue
     try {
@@ -26,18 +25,16 @@ export async function runPipeline(
       ctx.logger.error(`Filter error in plugin: ${plugin.name}`, {
         error: String(error),
       })
-      // Fail-open: filter errors don't block processing
     }
   }
 
-  // Classify phase — merge all classification results
-  let classification: Classification = {}
+  const classifications: Record<string, Classification> = {}
   for (const plugin of plugins) {
     if (!plugin.classify) continue
     try {
       const result = await plugin.classify(message, ctx)
       if (result) {
-        classification = { ...classification, ...result }
+        classifications[plugin.name] = result
       }
     } catch (error) {
       ctx.logger.error(`Classify error in plugin: ${plugin.name}`, {
@@ -45,14 +42,13 @@ export async function runPipeline(
       })
     }
   }
-  ctx.classifications = classification
+  ctx.classifications = classifications
 
-  // Policy phase — if any policy returns shouldAct: false, stop
   let decision: PolicyDecision = { shouldAct: false }
   for (const plugin of plugins) {
     if (!plugin.policy) continue
     try {
-      const result = await plugin.policy(classification, message, ctx)
+      const result = await plugin.policy(classifications, message, ctx)
       if (result) {
         if (!result.shouldAct) {
           ctx.logger.debug(`Policy rejected by plugin: ${plugin.name}`, {
@@ -66,14 +62,12 @@ export async function runPipeline(
       ctx.logger.error(`Policy error in plugin: ${plugin.name}`, {
         error: String(error),
       })
-      // Fail-closed: policy errors mean no action
       return
     }
   }
 
   if (!decision.shouldAct) return
 
-  // Action phase — run all matching action plugins
   for (const plugin of plugins) {
     if (!plugin.action) continue
     try {
