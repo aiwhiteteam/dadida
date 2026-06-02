@@ -232,8 +232,8 @@ deploy with an empty memory.
 
 ## Roadmap
 
-- [ ] **Recent context** — fetch last N messages from channel, pass to agent as conversation context
-- [ ] **Message history** — store all messages to SQLite, expose `search_history` tool to agent for on-demand retrieval
+- [x] **Recent context** — fetch last N messages from channel, pass to agent as conversation context
+- [x] **Message history** — store all messages to SQLite, expose `search_history` tool to agent for on-demand retrieval
 - [ ] **Memory system** — inspired by OpenClaw's three-layer architecture:
 
   | Layer | Storage | Purpose |
