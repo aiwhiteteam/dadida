@@ -93,7 +93,7 @@ describe('pipeline', () => {
     expect(ctx.classifications['classifier-b']).toEqual({ score: 0.3 })
   })
 
-  it('stops when policy returns shouldAct false', async () => {
+  it('does not act when the only policy declines (shouldAct false)', async () => {
     const actionFn = vi.fn()
 
     const plugins: DadidaPlugin[] = [
@@ -103,6 +103,18 @@ describe('pipeline', () => {
 
     await runPipeline(makeMessage(), plugins, makeContext())
     expect(actionFn).not.toHaveBeenCalled()
+  })
+
+  it('a declining policy does not block a later acting plugin', async () => {
+    const actionFn = vi.fn()
+
+    const plugins: DadidaPlugin[] = [
+      { name: 'decliner', async policy() { return { shouldAct: false } } },
+      { name: 'responder', async policy() { return { shouldAct: true, action: 'reply' } }, action: actionFn },
+    ]
+
+    await runPipeline(makeMessage(), plugins, makeContext())
+    expect(actionFn).toHaveBeenCalled()
   })
 
   it('runs all action plugins when policy passes', async () => {

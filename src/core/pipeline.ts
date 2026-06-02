@@ -51,10 +51,10 @@ export async function runPipeline(
       const result = await plugin.policy(classifications, message, ctx)
       if (result) {
         if (!result.shouldAct) {
-          ctx.logger.debug(`Policy rejected by plugin: ${plugin.name}`, {
+          ctx.logger.debug(`Policy declined by plugin: ${plugin.name}`, {
             messageId: message.id,
           })
-          return
+          continue
         }
         decision = result
       }
