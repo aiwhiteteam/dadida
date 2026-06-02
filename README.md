@@ -4,7 +4,7 @@ Build AI personas for Discord community engagement & management.
 
 Two ways to use:
 
-- **🚀 Deploy** — use [dadida-starter](https://github.com/aiwhiteteam/dadida-starter) — clone, configure your persona, deploy to Railway / Fly.io / any VPS.
+- **🚀 Deploy** — use [dadida-starter](https://github.com/aiwhiteteam/dadida-starter) — clone, configure your persona, deploy to Railway.
 - **📦 Library** — `npm install dadida` and build your own bot with a decoupled, customizable plugin system.
 
 ## Vision
@@ -69,7 +69,7 @@ const persona = new Agent({
 const bot = createBot({
   platform: discord({
     token: process.env.DISCORD_TOKEN!,
-    channels: [process.env.CHANNEL_ID!],
+    channels: process.env.LISTEN_CHANNEL_IDS?.split(','),
   }),
   plugins: [
     definePlugin({
@@ -102,7 +102,7 @@ bot.start()
 ```bash
 export DISCORD_TOKEN=your-token
 export OPENAI_API_KEY=your-key
-export CHANNEL_ID=your-channel-id
+export LISTEN_CHANNEL_IDS=your-channel-id   # optional; omit to listen on all channels
 
 # Development
 npm run dev
@@ -187,32 +187,6 @@ WebSocket connection). There is no HTTP server and no health-check endpoint — 
 host just needs to keep one process alive. Run **exactly one instance**: a second
 one opens a duplicate gateway connection and double-replies.
 
-The [starter](https://github.com/aiwhiteteam/dadida-starter) ships a ready-to-use
-`Dockerfile`, `.dockerignore`, and `fly.toml`.
-
-### Docker
-
-```dockerfile
-FROM node:20-slim AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:20-slim
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/personas ./personas
-COPY --from=build /app/knowledge ./knowledge
-COPY package.json ./
-CMD ["npm", "start"]
-```
-
-The container reads config from injected env vars — no `.env` file needed, since
-the start script uses `--env-file-if-exists` and simply skips it when absent.
-
 ### Railway
 
 1. Create a Railway project
@@ -223,46 +197,18 @@ the start script uses `--env-file-if-exists` and simply skips it when absent.
 6. Deploy — Railway runs it as a worker and monitors process health directly
    (no health check needed).
 
-### Fly.io
-
-Uses the bundled `fly.toml` (no `[http_service]` block on purpose — this is a
-worker, not a web app).
-
-```bash
-fly launch --no-deploy
-fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx LISTEN_CHANNEL_IDS=xxx
-fly deploy
-fly scale count 1                           # one instance only
-```
-
-### Any VPS / Docker Host
-
-```bash
-docker build -t dadida-bot .
-docker run -d --restart unless-stopped \
-  -e DISCORD_TOKEN=xxx \
-  -e OPENAI_API_KEY=xxx \
-  -e LISTEN_CHANNEL_IDS=xxx \
-  dadida-bot
-```
-
 ### Persisting history
 
 The bot writes message history to a SQLite file at `./data/messages.db`. On
-container hosts that directory is **ephemeral and wiped on every redeploy**. To
-keep history across restarts, mount a persistent volume at `/app/data`:
+Railway that directory is **ephemeral and wiped on every redeploy**. To keep
+history across restarts, attach a persistent volume at `/app/data`:
 
-- **Fly.io**: `fly volumes create data --size 1`, then add a `[[mounts]]` block to
-  `fly.toml` (`source = "data"`, `destination = "/app/data"`).
-- **Docker / VPS**: add `-v dadida-data:/app/data` to `docker run`.
-- **Railway** (same for Nixpacks or Docker builds — a volume is a runtime setting,
-  not a build one):
-  1. Open the project and select your bot service.
-  2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
-  3. Set the **mount path** to `/app/data` and create it — Railway redeploys with
-     the volume attached.
-  4. Keep the service at **1 replica** (volumes can't attach to multi-replica
-     services — which also matches the single-gateway-connection requirement).
+1. Open the project and select your bot service.
+2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
+3. Set the **mount path** to `/app/data` and create it — Railway redeploys with
+   the volume attached.
+4. Keep the service at **1 replica** (volumes can't attach to multi-replica
+   services — which also matches the single-gateway-connection requirement).
 
 History is optional — without a volume the bot still runs, it just starts each
 deploy with an empty memory.
@@ -275,13 +221,11 @@ deploy with an empty memory.
 | `OPENAI_API_KEY` | Yes | OpenAI API key (used by @openai/agents) |
 | `LISTEN_CHANNEL_IDS` | No | Channel ID(s) to listen on; comma-separate for several (`123,456`). Empty = all channels |
 | `CONFIDENCE_THRESHOLD` | No | Minimum confidence (0–1) for the persona to reply. Default `0.75` |
-| `ESCALATE_CHANNEL_ID` | No | Channel for moderator escalation alerts |
-| `ESCALATE_MENTION` | No | Mention used on escalation when no escalation channel is set |
 
 ## Design Principles
 
 - **Silent by default** — not every message deserves a response
-- **LLM classifies, code decides** — deterministic policy gate, not prompt tricks
+- **LLM judges, code enforces** — LLM decides severity and action, code applies safety caps
 - **Fail-closed** — prefer false negatives over false positives
 - **Plugins are functions** — no magic, no YAML, no auto-discovery
 - **Platform-agnostic** — Discord first, extensible to Slack/Telegram
