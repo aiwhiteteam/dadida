@@ -25,6 +25,9 @@ export class MessageStore {
   constructor(dbPath: string = './dadida.db') {
     this.db = new Database(dbPath)
     this.db.pragma('journal_mode = WAL')
+    // Wait (instead of throwing SQLITE_BUSY) if another writer holds the lock —
+    // e.g. the live bot and a backfill script writing the same db concurrently.
+    this.db.pragma('busy_timeout = 5000')
     this.init()
   }
 
