@@ -182,7 +182,13 @@ Edit markdown to change personality or knowledge — no code changes needed.
 
 > For deployment, use [dadida-starter](https://github.com/aiwhiteteam/dadida-starter). The instructions below apply to the starter repo.
 
-Dadida runs as a long-lived worker process (Discord WebSocket connection). No HTTP server required.
+Dadida runs as a **long-lived worker process** (it holds a Discord gateway /
+WebSocket connection). There is no HTTP server and no health-check endpoint — the
+host just needs to keep one process alive. Run **exactly one instance**: a second
+one opens a duplicate gateway connection and double-replies.
+
+The [starter](https://github.com/aiwhiteteam/dadida-starter) ships a ready-to-use
+`Dockerfile`, `.dockerignore`, and `fly.toml`.
 
 ### Docker
 
@@ -204,43 +210,30 @@ COPY package.json ./
 CMD ["npm", "start"]
 ```
 
+The container reads config from injected env vars — no `.env` file needed, since
+the start script uses `--env-file-if-exists` and simply skips it when absent.
+
 ### Railway
 
 1. Create a Railway project
 2. Connect your GitHub repo
-3. Set environment variables:
-   ```
-   DISCORD_TOKEN=
-   OPENAI_API_KEY=
-   CHANNEL_ID=
-   ```
-4. Set build command: `npm run build`
-5. Set start command: `npm start`
-5. Deploy — Railway runs it as a worker process
-
-No health check endpoint needed. Railway monitors process health directly.
+3. Set environment variables (at minimum `DISCORD_TOKEN` and `OPENAI_API_KEY`)
+4. Build command: `npm run build`
+5. Start command: `npm start`
+6. Deploy — Railway runs it as a worker and monitors process health directly
+   (no health check needed).
 
 ### Fly.io
 
-```toml
-# fly.toml
-app = "my-dadida-bot"
-primary_region = "sjc"
-
-[build]
-  dockerfile = "Dockerfile"
-
-[env]
-  NODE_ENV = "production"
-```
+Uses the bundled `fly.toml` (no `[http_service]` block on purpose — this is a
+worker, not a web app).
 
 ```bash
-fly launch
-fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx CHANNEL_ID=xxx
+fly launch --no-deploy
+fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx LISTEN_CHANNEL_IDS=xxx
 fly deploy
+fly scale count 1                           # one instance only
 ```
-
-Set machine count to 1 — you only need one instance for the Discord gateway connection.
 
 ### Any VPS / Docker Host
 
@@ -249,9 +242,23 @@ docker build -t dadida-bot .
 docker run -d --restart unless-stopped \
   -e DISCORD_TOKEN=xxx \
   -e OPENAI_API_KEY=xxx \
-  -e CHANNEL_ID=xxx \
+  -e LISTEN_CHANNEL_IDS=xxx \
   dadida-bot
 ```
+
+### Persisting history
+
+The bot writes message history to a SQLite file at `./data/messages.db`. On
+container hosts that directory is **ephemeral and wiped on every redeploy**. To
+keep history across restarts, mount a persistent volume at `/app/data`:
+
+- **Fly.io**: `fly volumes create data --size 1`, then add a `[[mounts]]` block to
+  `fly.toml` (`source = "data"`, `destination = "/app/data"`).
+- **Docker / VPS**: add `-v dadida-data:/app/data` to `docker run`.
+- **Railway**: attach a volume mounted at `/app/data`.
+
+History is optional — without a volume the bot still runs, it just starts each
+deploy with an empty memory.
 
 ## Environment Variables
 
@@ -259,7 +266,10 @@ docker run -d --restart unless-stopped \
 |----------|----------|-------------|
 | `DISCORD_TOKEN` | Yes | Discord bot token |
 | `OPENAI_API_KEY` | Yes | OpenAI API key (used by @openai/agents) |
-| `CHANNEL_ID` | No | Restrict to specific channel(s) |
+| `LISTEN_CHANNEL_IDS` | No | Channel ID(s) to listen on; comma-separate for several (`123,456`). Empty = all channels |
+| `CONFIDENCE_THRESHOLD` | No | Minimum confidence (0–1) for the persona to reply. Default `0.75` |
+| `ESCALATE_CHANNEL_ID` | No | Channel for moderator escalation alerts |
+| `ESCALATE_MENTION` | No | Mention used on escalation when no escalation channel is set |
 
 ## Design Principles
 
