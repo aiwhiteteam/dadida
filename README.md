@@ -255,7 +255,14 @@ keep history across restarts, mount a persistent volume at `/app/data`:
 - **Fly.io**: `fly volumes create data --size 1`, then add a `[[mounts]]` block to
   `fly.toml` (`source = "data"`, `destination = "/app/data"`).
 - **Docker / VPS**: add `-v dadida-data:/app/data` to `docker run`.
-- **Railway**: attach a volume mounted at `/app/data`.
+- **Railway** (same for Nixpacks or Docker builds — a volume is a runtime setting,
+  not a build one):
+  1. Open the project and select your bot service.
+  2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
+  3. Set the **mount path** to `/app/data` and create it — Railway redeploys with
+     the volume attached.
+  4. Keep the service at **1 replica** (volumes can't attach to multi-replica
+     services — which also matches the single-gateway-connection requirement).
 
 History is optional — without a volume the bot still runs, it just starts each
 deploy with an empty memory.
