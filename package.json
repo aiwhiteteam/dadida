@@ -16,7 +16,7 @@
     }
   },
   "bin": {
-    "dadida": "./dist/cli.js"
+    "dadida": "dist/cli.js"
   },
   "scripts": {
     "build": "tsup",
@@ -35,6 +35,14 @@
     "framework"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiwhiteteam/dadida.git"
+  },
+  "homepage": "https://github.com/aiwhiteteam/dadida#readme",
+  "bugs": {
+    "url": "https://github.com/aiwhiteteam/dadida/issues"
+  },
   "dependencies": {
     "@openai/agents": "^0.11.0",
     "better-sqlite3": "^11.0.0",
