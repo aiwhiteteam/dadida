@@ -2,6 +2,7 @@ export interface DadidaMessage {
   id: string
   content: string
   authorId: string
+  authorName: string
   authorIsBot: boolean
   channelId: string
   platform: string
@@ -37,6 +38,7 @@ export interface StoredMessage {
   id: string
   content: string
   authorId: string
+  authorName: string
   channelId: string
   platform: string
   timestamp: number

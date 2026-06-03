@@ -5,6 +5,7 @@ export interface StoredMessage {
   id: string
   content: string
   authorId: string
+  authorName: string
   channelId: string
   platform: string
   timestamp: number
@@ -37,6 +38,7 @@ export class MessageStore {
         id TEXT PRIMARY KEY,
         content TEXT NOT NULL,
         author_id TEXT NOT NULL,
+        author_name TEXT NOT NULL DEFAULT '',
         channel_id TEXT NOT NULL,
         platform TEXT NOT NULL,
         timestamp INTEGER NOT NULL
@@ -48,6 +50,14 @@ export class MessageStore {
       CREATE INDEX IF NOT EXISTS idx_messages_author
         ON messages(author_id, timestamp DESC);
     `)
+
+    // Migrate existing databases that predate the author_name column.
+    const hasAuthorName = this.db.prepare(
+      `SELECT name FROM pragma_table_info('messages') WHERE name='author_name'`
+    ).get()
+    if (!hasAuthorName) {
+      this.db.exec(`ALTER TABLE messages ADD COLUMN author_name TEXT NOT NULL DEFAULT ''`)
+    }
 
     const ftsExists = this.db.prepare(
       `SELECT name FROM sqlite_master WHERE type='table' AND name='messages_fts'`
@@ -71,12 +81,13 @@ export class MessageStore {
 
   store(message: DadidaMessage): void {
     this.db.prepare(`
-      INSERT OR IGNORE INTO messages (id, content, author_id, channel_id, platform, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR IGNORE INTO messages (id, content, author_id, author_name, channel_id, platform, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       message.id,
       message.content,
       message.authorId,
+      message.authorName,
       message.channelId,
       message.platform,
       message.timestamp.getTime(),
@@ -113,7 +124,7 @@ export class MessageStore {
     params.push(limit)
 
     const rows = this.db.prepare(
-      `SELECT id, content, author_id, channel_id, platform, timestamp
+      `SELECT id, content, author_id, author_name, channel_id, platform, timestamp
        FROM messages ${where}
        ORDER BY timestamp DESC
        LIMIT ?`
@@ -121,6 +132,7 @@ export class MessageStore {
       id: string
       content: string
       author_id: string
+      author_name: string
       channel_id: string
       platform: string
       timestamp: number
@@ -130,6 +142,7 @@ export class MessageStore {
       id: row.id,
       content: row.content,
       authorId: row.author_id,
+      authorName: row.author_name,
       channelId: row.channel_id,
       platform: row.platform,
       timestamp: row.timestamp,
@@ -138,7 +151,7 @@ export class MessageStore {
 
   getRecent(channelId: string, limit: number = 20): StoredMessage[] {
     const rows = this.db.prepare(
-      `SELECT id, content, author_id, channel_id, platform, timestamp
+      `SELECT id, content, author_id, author_name, channel_id, platform, timestamp
        FROM messages
        WHERE channel_id = ?
        ORDER BY timestamp DESC
@@ -147,6 +160,7 @@ export class MessageStore {
       id: string
       content: string
       author_id: string
+      author_name: string
       channel_id: string
       platform: string
       timestamp: number
@@ -156,6 +170,7 @@ export class MessageStore {
       id: row.id,
       content: row.content,
       authorId: row.author_id,
+      authorName: row.author_name,
       channelId: row.channel_id,
       platform: row.platform,
       timestamp: row.timestamp,
