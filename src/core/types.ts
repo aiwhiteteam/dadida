@@ -51,6 +51,7 @@ export interface Platform {
   onMessage(handler: (message: DadidaMessage) => Promise<void>): void
   reply(channelId: string, messageId: string, text: string): Promise<void>
   mute(channelId: string, userId: string, durationSeconds: number, reason?: string): Promise<void>
+  deleteMessage(channelId: string, messageId: string): Promise<void>
   sendMessage(channelId: string, text: string): Promise<void>
 }
 

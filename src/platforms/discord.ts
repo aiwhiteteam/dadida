@@ -56,6 +56,13 @@ class DiscordPlatform implements Platform {
 
 
 
+  async deleteMessage(channelId: string, messageId: string): Promise<void> {
+    const channel = await this.client.channels.fetch(channelId)
+    if (!channel?.isTextBased() || !('messages' in channel)) return
+    const msg = await channel.messages.fetch(messageId)
+    await msg.delete()
+  }
+
   async sendMessage(channelId: string, text: string): Promise<void> {
     const channel = await this.client.channels.fetch(channelId)
     if (!channel?.isTextBased() || !('send' in channel)) return

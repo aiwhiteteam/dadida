@@ -81,8 +81,9 @@ export class MessageStore {
 
   store(message: DadidaMessage): void {
     this.db.prepare(`
-      INSERT OR IGNORE INTO messages (id, content, author_id, author_name, channel_id, platform, timestamp)
+      INSERT INTO messages (id, content, author_id, author_name, channel_id, platform, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET author_name = excluded.author_name
     `).run(
       message.id,
       message.content,
